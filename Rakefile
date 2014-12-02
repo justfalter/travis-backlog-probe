@@ -75,7 +75,7 @@ task :report_start_delay do
   timestamp =  get_time_from_file(TIMESTAMP_FILE)
   puts "Timestamp: #{timestamp.to_s}"
   puts "Current time: #{current_time.to_s}"
-  seconds = (current_time.to_time - timestamp.to_time)
+  seconds = (current_time.to_time - timestamp.to_time).to_i
   puts "Delta: #{seconds}"
   report_start_delay(seconds)
 end
