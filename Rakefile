@@ -6,23 +6,25 @@ require 'openssl'
 WEBHOOK_URL = 'https://webhooks.gitter.im/e/0a8a11aa7e743be8ca92'
 PROBE_FILENAME = "PROBE_NUMBER"
 TIMESTAMP_FILE = "timestamp.txt"
+NTP_PACKET_SIZE= 48
+EPOCH_SECONDS = 2208988800
 
 def get_time_from_ntp
-  before = DateTime.now
-  output = `ntpdate -q pool.ntp.org`
-  delta = DateTime.now - before
-  unless $?.success?
-    raise "ntpdate exited with #{$?.exitstatus}"
+  start = Time.now
+  require 'socket'
+  s = UDPSocket.new
+  ntppacket = [0b11100011, 0, 6, 0xEC, 0, 49, 0x4E, 49, 52,0,0,0,0].pack("C4QC4Q4")
+  3.times do
+    s.send ntppacket, 0, "pool.ntp.org", 123
   end
-  if match = output.match(/^(.*) ntpdate\[.*adjust time server/)
-    time = DateTime.parse(match[1])
-    # adjust for the time it took to run ntpdate
-    time = time - delta
-    return time
-  else
-    raise "Failed to parse ntpdate output! : #{output}"
-  end
+  response = s.recv(NTP_PACKET_SIZE)
+  delta = Time.now - start
+  z, time = response.unpack("A40N")
+  epoch = time - EPOCH_SECONDS - delta
+  time =  Time.at(epoch)
+  return time.to_datetime
 end
+
 
 def get_time_from_file(filename)
   time_s = File.read(filename)
@@ -41,11 +43,6 @@ def send_message(message)
   encoded_params = URI.encode_www_form(params)
   Net::HTTP.start(url.host, url.port, :use_ssl => url.scheme == 'https') do |http|
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-
-    require 'pp'
-    pp [url.request_uri]
-    pp http
     http.post(url.request_uri, encoded_params)
   end
 end
@@ -56,6 +53,7 @@ def report_start_delay(seconds)
   commit = ENV['TRAVIS_COMMIT']
   send_message("**[Job #{job}](#{job_url})**: #{seconds} seconds")
 end
+
 
 desc "Record the time to #{TIMESTAMP_FILE}"
 task :record_time do
@@ -73,9 +71,12 @@ task :read_timestamp do
 end
 
 task :report_start_delay do
-  time = get_time_from_ntp()
-  time2 =  get_time_from_file(TIMESTAMP_FILE)
-  seconds = (time.to_time - time2.to_time)
+  current_time = get_time_from_ntp()
+  timestamp =  get_time_from_file(TIMESTAMP_FILE)
+  puts "Timestamp: #{timestamp.to_s}"
+  puts "Current time: #{current_time.to_s}"
+  seconds = (current_time.to_time - timestamp.to_time)
+  puts "Delta: #{seconds}"
   report_start_delay(seconds)
 end
 
