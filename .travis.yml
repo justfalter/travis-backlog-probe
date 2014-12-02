@@ -1,0 +1,8 @@
+notifications:
+  urls:
+   - https://webhooks.gitter.im/e/758970532ab6b583c234
+  on_success: always
+  on_failure: always
+  on_start: true
+
+script: echo "I'm a script!"
