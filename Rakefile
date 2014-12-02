@@ -48,7 +48,7 @@ def send_message(message)
 end
 
 def report_start_delay(seconds)
-  job_url = "https://travis-ci.org/justfalter/travis-backlog-probe/builds/#{ENV['TRAVIS_JOB_ID']}"
+  job_url = "https://travis-ci.org/justfalter/travis-backlog-probe/jobs/#{ENV['TRAVIS_JOB_ID']}"
   job = ENV['TRAVIS_JOB_NUMBER']
   commit = ENV['TRAVIS_COMMIT']
   send_message("**[Job #{job}](#{job_url})**: #{seconds} seconds")
