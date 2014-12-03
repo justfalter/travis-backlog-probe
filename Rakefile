@@ -84,6 +84,7 @@ def do_command(cmd)
   system(cmd) or raise("Command failed: #{cmd}")
 end
 
+desc 'Send a probe into travis!'
 task :send_probe => [ :record_time ] do
   do_command("git add #{TIMESTAMP_FILE}")
   do_command("git commit -m 'sending probe!'")
