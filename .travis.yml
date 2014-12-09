@@ -1,2 +1,3 @@
 language: ruby
 script: rake report_start_delay
+sudo: false
